@@ -1,4 +1,4 @@
-const { Telegraf } = require('telegraf')
+const { Telegraf, Markup } = require('telegraf')
 const mongoose = require('mongoose')
 const models = require('./models')
 const db = mongoose.connection
@@ -32,11 +32,40 @@ db.on('connected', () => {
 
   bot.help(context => context.reply('You don\'t need help!'))
 
+  const inlineKeyboard = Markup.inlineKeyboard([
+      Markup.callbackButton('😬 Unset', 'unset'),
+      Markup.callbackButton('🤑 Add', 'add')
+  ]).extra()
+
+  bot.action('unset', (ctx) => ctx.editMessageText('👌 Done'))
+
+  bot.action('add', (ctx) => {
+    ctx.editMessageText('👌 Done')}
+  )
+
+  bot.on('text', ctx => {
+    const message = ctx.message.text
+    const numericMutch = message.match(/(\d+)/)
+    const sum = numericMutch && +numericMutch[0] || 0
+
+    console.log(sum)
+
+    if (!sum) {
+      return ctx.reply('Write correct operation, like: Cup a coffe 13')
+    }
+
+    return ctx.telegram.sendMessage(
+      ctx.chat.id,
+      'Operation?',
+      inlineKeyboard
+    )
+  })
+
   bot.command('balance', async (context) => {
     try {
       const { id } = context.chat
       const user = await User.findOne({ telegramId: id })
-  
+
       context.reply(`You have ${user.balance} units on your balance`)
     } catch (error) {
       context.reply('Something went wrong!')
@@ -47,9 +76,9 @@ db.on('connected', () => {
 })
 
 const gracefulExit = () => { 
-  db.close(() => {
-    process.exit(0)
-  })
+  // db.close(() => {
+  //   process.exit(0)
+  // })
 }
 
 // If the Node process ends, close the Mongoose connection
